@@ -1,11 +1,8 @@
 use std::error::Error;
 use std::fs::File;
 use std::io::{self, BufRead};
-use loading::Loading;
 
 use serde::Deserialize;
-
-//===================================================================================================================//
 
 #[derive(Debug, Deserialize)]
 pub struct HotelsRecords {
@@ -17,33 +14,33 @@ pub struct HotelsRecords {
     pub city: String,
 }
 
-//===================================================================================================================//
-
 pub fn get_hotels(path: String) -> Result<Vec<HotelsRecords>, Box<dyn Error>> {
-    // init laoding information
-    let mut loading = Loading::new();
-    // start laoding information
-    loading.start();
-    
     // load JSON file
     let file = File::open(path)?;
     let mut hotels = Vec::new();
     let lines = io::BufReader::new(file).lines();
 
     // write date to buffor
-    for (i, line) in lines.enumerate() {
-        // show loading information
-        loading.text(format!("Loading hotels.json: {}", i));
-
-        let unit: HotelsRecords = serde_json::from_str(&line.unwrap())?;
+    for line in lines {
+        let unit: HotelsRecords = serde_json::from_str(&line?)?;
         hotels.push(unit)
     }
-
-    // end laoding information
-    loading.success("OK");
-    loading.end();
 
     Ok(hotels)
 }
 
-//===================================================================================================================//
+#[cfg(test)]
+mod test {
+    use crate::{hotels::get_hotels};
+
+    #[test]
+    fn test_get_hotels() {
+        get_hotels(String::from("hotels.json")).expect("test_get_hotels()");
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_panic_get_hotels() {
+        get_hotels(String::from("foo.json")).expect("test_panic_get_hotels()");
+    }
+}
